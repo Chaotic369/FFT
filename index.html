@@ -5,26 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>XAU/USD Tick Analysis System</title>
     <style>
-        :root {
-            --bg-color: #000432;
-            --grid-line: rgba(255, 255, 255, 0.15);
-            --neon-green: #00ff55;
-            --neon-red: #ff0044;
-            --neon-pink: #ff00ff;
-            --neon-blue: #00ffff;
-            --table-border: #4a4a8a;
-            --text-grey: #8888aa;
-        }
-
         body {
             margin: 0;
             padding: 0;
-            background-color: var(--bg-color);
+            background-color: #000000;
+            color: #ffffff;
             height: 100vh;
             display: flex;
             overflow: hidden;
-            font-family: 'Courier New', Courier, monospace; /* Monospace for trading data */
-            color: white;
+            font-family: Arial, Helvetica, sans-serif;
         }
 
         /* --- LEFT PANEL: THE GRID --- */
@@ -38,21 +27,20 @@
         .grid-container {
             display: grid;
             grid-template-columns: repeat(24, 1fr);
-            grid-template-rows: repeat(117, 1fr); /* 117 rows to match 0-116 index */
+            grid-template-rows: repeat(117, 1fr); 
             flex: 1;
             height: 100%;
-            background-color: var(--bg-color);
+            background-color: #000000;
         }
 
         .grid-cell {
             box-sizing: border-box;
-            border-right: 1px solid var(--grid-line);
-            border-bottom: 1px solid var(--grid-line);
+            border-right: 1px solid #222222;
+            border-bottom: 1px solid #222222;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: min(0.9vw, 1vh);
-            font-weight: bold;
             user-select: none;
         }
 
@@ -61,16 +49,16 @@
             width: 5%;
             height: 100%;
             display: flex;
-            border-left: 2px solid var(--table-border);
-            border-right: 2px solid var(--table-border);
-            background-color: #00021a;
+            border-left: 2px solid #444444;
+            border-right: 2px solid #444444;
+            background-color: #0a0a0a;
         }
 
         .multiplier-col, .index-col {
             flex: 1;
             display: flex;
             flex-direction: column;
-            border-right: 1px solid var(--table-border);
+            border-right: 1px solid #333333;
         }
 
         .center-cell {
@@ -79,11 +67,14 @@
             align-items: center;
             justify-content: center;
             font-size: min(0.8vw, 0.9vh);
-            border-bottom: 1px solid var(--grid-line);
+            border-bottom: 1px solid #222222;
+            color: #aaaaaa;
         }
         
-        .multiplier-col .center-cell { color: var(--neon-pink); }
-        .index-col .center-cell { color: var(--text-grey); font-weight: bold; background: #000432; }
+        .index-col .center-cell { 
+            background-color: #000000; 
+            color: #666666; 
+        }
 
         /* --- RIGHT PANEL: DASHBOARD --- */
         .right-panel {
@@ -92,45 +83,49 @@
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
-            padding: 5px;
-            gap: 10px;
+            padding: 10px;
+            gap: 15px;
         }
 
         /* Top Controls */
         .top-controls {
             display: flex;
-            gap: 5px;
+            gap: 8px;
             align-items: center;
-            padding: 5px;
-            border-bottom: 1px solid var(--table-border);
+            padding-bottom: 10px;
+            border-bottom: 1px solid #444444;
         }
 
         .control-btn {
-            background: transparent;
-            color: var(--text-grey);
-            border: 1px solid #aa8800; /* Yellowish border from screenshot */
-            padding: 4px 8px;
-            font-size: 11px;
-            font-weight: bold;
+            background: #111111;
+            color: #ffffff;
+            border: 1px solid #555555; 
+            padding: 5px 10px;
+            font-size: 12px;
             cursor: pointer;
+            border-radius: 3px;
         }
 
-        .control-btn:hover { background: #aa8800; color: #000; }
+        .control-btn:hover { 
+            background: #333333; 
+        }
         
-        .active-btn { background: #aa8800; color: #000; }
+        .active-btn { 
+            background: #ffffff; 
+            color: #000000; 
+        }
 
         .price-display {
             margin-left: auto;
-            color: yellow;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: normal;
         }
 
         /* Tables */
         .dashboard-table-container {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
             flex: 1;
             overflow-y: auto;
         }
@@ -138,46 +133,48 @@
         table.trading-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11px;
-            border: 1px solid var(--table-border);
+            font-size: 12px;
+            border: 1px solid #333333;
         }
 
         table.trading-table th, table.trading-table td {
-            border: 1px solid var(--table-border);
+            border: 1px solid #333333;
             text-align: center;
-            padding: 4px 2px;
+            padding: 6px 4px;
+        }
+
+        table.trading-table th {
+            background-color: #111111;
+            color: #888888;
+            font-weight: normal;
         }
 
         .table-title {
-            text-align: center;
-            font-weight: bold;
-            letter-spacing: 5px;
-            padding: 4px 0;
-            border: 1px solid var(--table-border);
+            text-align: left;
+            font-size: 14px;
+            padding-bottom: 5px;
+            color: #ffffff;
+            border-bottom: 1px solid #333333;
         }
 
-        .title-reversal { color: var(--neon-pink); }
-        .title-momentum { color: var(--neon-blue); }
-
-        .asset-name { color: #aaaaaa; }
-        .val-c { color: var(--neon-green); }
-        .val-r { color: var(--neon-red); }
-        .val-x { color: var(--neon-pink); }
+        .asset-name { color: #cccccc; }
+        .val-up { color: #44ff44; }
+        .val-down { color: #ff4444; }
 
         /* Bottom Info */
         .bottom-info {
             display: flex;
             justify-content: space-between;
-            border: 1px solid var(--neon-green);
-            padding: 5px;
+            border-top: 1px solid #444444;
+            padding-top: 10px;
             font-size: 12px;
-            color: var(--neon-green);
+            color: #aaaaaa;
         }
 
         /* Scrollbar styling */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: var(--bg-color); }
-        ::-webkit-scrollbar-thumb { background: var(--table-border); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000000; }
+        ::-webkit-scrollbar-thumb { background: #444444; border-radius: 3px; }
 
     </style>
 </head>
@@ -199,6 +196,7 @@
         
         <!-- Top Control Bar -->
         <div class="top-controls">
+            <!-- Both Reversal and Momentum act as selected default logical tools per instruction -->
             <button class="control-btn active-btn">BS %</button>
             <button class="control-btn">ALL LVL</button>
             <button class="control-btn">SCAN</button>
@@ -208,18 +206,18 @@
 
         <div class="dashboard-table-container">
             <!-- REVERSAL TABLE -->
-            <div class="table-title title-reversal">R E V E R S A L</div>
+            <div class="table-title">Reversal Signals</div>
             <table class="trading-table" id="reversal-table">
                 <thead>
-                    <tr style="color: var(--text-grey);">
-                        <th>ASSET</th>
+                    <tr>
+                        <th>Asset</th>
                         <th>C</th>
                         <th>R</th>
-                        <th>X-RNG</th>
+                        <th>Range</th>
                         <th>N1</th>
                         <th>N2</th>
-                        <th>F-RNG</th>
-                        <th>WIN%</th>
+                        <th>Status</th>
+                        <th>Win%</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -227,21 +225,19 @@
                 </tbody>
             </table>
 
-            <br>
-
             <!-- MOMENTUM TABLE -->
-            <div class="table-title title-momentum">M O M E N T U M</div>
+            <div class="table-title">Momentum Signals</div>
             <table class="trading-table" id="momentum-table">
                 <thead>
-                    <tr style="color: var(--text-grey);">
-                        <th>ASSET</th>
+                    <tr>
+                        <th>Asset</th>
                         <th>C</th>
                         <th>R</th>
-                        <th>X-RNG</th>
+                        <th>Range</th>
                         <th>N1</th>
                         <th>N2</th>
-                        <th>F-RNG</th>
-                        <th>WIN%</th>
+                        <th>Status</th>
+                        <th>Win%</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -253,8 +249,8 @@
         <!-- Bottom Status -->
         <div class="bottom-info">
             <span id="sys-time">00:00</span>
-            <span>MIN: 61</span>
-            <span>MAX: 120</span>
+            <span id="connection-status">Connecting...</span>
+            <span>MIN: 61 | MAX: 120</span>
         </div>
 
     </div>
@@ -268,22 +264,18 @@
         const TOTAL_ROWS = 117;
         const TOTAL_COLS = 24;
         
-        // Render Center Columns
         for (let i = 0; i < TOTAL_ROWS; i++) {
-            // Multiplier (mocking the x3, x11 logic from screenshot)
             const mCell = document.createElement('div');
             mCell.className = 'center-cell';
             mCell.textContent = 'x' + (Math.floor(Math.random() * 10) + 3);
             multiplierCol.appendChild(mCell);
 
-            // Row Index (0 to 116)
             const idxCell = document.createElement('div');
             idxCell.className = 'center-cell';
             idxCell.textContent = i;
             indexCol.appendChild(idxCell);
         }
 
-        // Render Main Grid (Empty initially)
         const gridCells = [];
         for (let r = 0; r < TOTAL_ROWS; r++) {
             gridCells[r] = [];
@@ -295,84 +287,72 @@
             }
         }
 
-
         // --- 2. XAU/USD TICK ENGINE & LOGIC ---
-        let currentPrice = 2345.50;
+        let currentPrice = 2450.00; // Base rough value for Gold
         let activeRow = 0;
         let activeCol = 0;
-        
-        // Streak tracking
         let currentStreak = 0;
         let lastColor = null;
 
-        // UI Elements
         const priceDisplay = document.getElementById('current-price');
         const reversalTable = document.querySelector('#reversal-table tbody');
         const momentumTable = document.querySelector('#momentum-table tbody');
         const timeDisplay = document.getElementById('sys-time');
+        const statusDisplay = document.getElementById('connection-status');
 
-        // Clock Update
         setInterval(() => {
             const now = new Date();
-            timeDisplay.textContent = now.toTimeString().split(' ')[0].substring(0, 5) + ' & ' + 
-                                      new Date(now.getTime() + 12*60*60*1000).toTimeString().split(' ')[0].substring(0, 5);
+            timeDisplay.textContent = now.toTimeString().split(' ')[0].substring(0, 5);
         }, 1000);
 
-        function addSignalToTable(tableBody, type, streak, color) {
+        function addSignalToTable(tableBody, streak, isUp) {
             const tr = document.createElement('tr');
-            
-            // Random mock data to match screenshot vibe based on the signal
+            const colorClass = isUp ? 'val-up' : 'val-down';
             const cVal = Math.floor(Math.random() * 50) + 80;
             const rVal = Math.floor(Math.random() * 50) + 30;
             const winRate = Math.floor(Math.random() * 15) + 80;
 
             tr.innerHTML = `
                 <td class="asset-name">XAU/USD</td>
-                <td class="val-c">C${cVal}</td>
-                <td class="val-r">R${rVal}</td>
-                <td class="val-x" style="color:${color}">X4-X${streak}</td>
+                <td>C${cVal}</td>
+                <td>R${rVal}</td>
+                <td class="${colorClass}">X4-X${streak}</td>
                 <td>22</td>
                 <td>3</td>
-                <td>F1-3</td>
-                <td style="color:${color}">${winRate}%</td>
+                <td>Active</td>
+                <td class="${colorClass}">${winRate}%</td>
             `;
 
-            // Prepend so newest is at the top
             tableBody.insertBefore(tr, tableBody.firstChild);
-            
-            // Keep tables from getting infinitely long (max 20 rows)
-            if (tableBody.children.length > 20) {
+            if (tableBody.children.length > 15) {
                 tableBody.removeChild(tableBody.lastChild);
             }
         }
 
         function handleNewTick(price, isUp) {
             priceDisplay.textContent = price.toFixed(2);
-            priceDisplay.style.color = isUp ? '#00ff55' : '#ff0044';
+            priceDisplay.style.color = isUp ? '#44ff44' : '#ff4444';
 
-            const tickColor = isUp ? '#00ff55' : '#ff0044';
+            const tickColor = isUp ? '#44ff44' : '#ff4444';
 
-            // Streak Logic
             if (lastColor === tickColor) {
                 currentStreak++;
             } else {
-                // If streak broke, check if it was long enough to trigger a signal (e.g., streak > 3)
                 if (currentStreak >= 4) {
-                    addSignalToTable(reversalTable, 'REVERSAL', currentStreak, tickColor === '#00ff55' ? '#ff0044' : '#00ff55');
+                    // Reverse color logic for reversal
+                    addSignalToTable(reversalTable, currentStreak, !isUp);
                 } else if (currentStreak === 3) {
-                    addSignalToTable(momentumTable, 'MOMENTUM', currentStreak, tickColor);
+                    addSignalToTable(momentumTable, currentStreak, !isUp);
                 }
                 currentStreak = 1;
                 lastColor = tickColor;
             }
 
-            // Draw to grid
             if (activeRow < TOTAL_ROWS && activeCol < TOTAL_COLS) {
                 const cell = gridCells[activeRow][activeCol];
-                cell.textContent = 'X' + currentStreak;
+                cell.textContent = 'x' + currentStreak;
                 cell.style.color = tickColor;
 
-                // Move logic (fills horizontally, then wraps to next row)
                 activeCol++;
                 if (activeCol >= TOTAL_COLS) {
                     activeCol = 0;
@@ -381,55 +361,78 @@
             }
         }
 
-        // --- 3. DATA FEED SOURCE ---
+        // --- 3. DERIV WEBSOCKET INTEGRATION ---
+        function connectDerivWebSocket() {
+            const appId = 1089; 
+            const ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${appId}`);
+            let isFirstTick = true;
 
-                // Deriv WebSocket Integration for XAU/USD
-                const appId = 1089; // Standard public app ID for Deriv WebSocket
-                const ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${appId}`);
+            ws.onopen = function() {
+                statusDisplay.textContent = "Live: Deriv WS";
+                statusDisplay.style.color = "#44ff44";
+                ws.send(JSON.stringify({
+                    ticks: "frxXAUUSD",
+                    subscribe: 1
+                }));
+            };
 
-                let isFirstTick = true;
-
-                ws.onopen = function() {
-                    console.log("Connected to Deriv WebSocket");
-                    // Subscribe to XAU/USD ticks (Deriv symbol: frxXAUUSD)
-                    ws.send(JSON.stringify({
-                        ticks: "frxXAUUSD",
-                        subscribe: 1
-                    }));
-                };
-
-                ws.onmessage = function(msg) {
-                    const data = JSON.parse(msg.data);
-            
-                    if (data.error) {
-                        console.error("Deriv API Error: ", data.error.message);
-                        return;
+            ws.onmessage = function(msg) {
+                const data = JSON.parse(msg.data);
+                
+                if (data.error) {
+                    console.error("Deriv API Error: ", data.error.message);
+                    if (data.error.code === 'MarketIsClosed') {
+                        statusDisplay.textContent = "Market Closed - Running Simulator";
+                        statusDisplay.style.color = "#ffaa00";
+                        startSimulationFallback();
+                    } else {
+                        statusDisplay.textContent = "Error: " + data.error.message;
+                        statusDisplay.style.color = "#ff4444";
                     }
+                    return;
+                }
 
-                    if (data.tick) {
-                        const newPrice = parseFloat(data.tick.quote);
-                
-                        // Sync the initial price silently so we don't calculate a fake jump
-                        if (isFirstTick) {
-                            currentPrice = newPrice;
-                            isFirstTick = false;
-                            return; 
-                        }
-                
-                        const isUp = newPrice >= currentPrice;
+                if (data.tick) {
+                    const newPrice = parseFloat(data.tick.quote);
+                    
+                    if (isFirstTick) {
                         currentPrice = newPrice;
-                        handleNewTick(currentPrice, isUp);
+                        isFirstTick = false;
+                        return; 
                     }
-                };
+                    
+                    const isUp = newPrice >= currentPrice;
+                    currentPrice = newPrice;
+                    handleNewTick(currentPrice, isUp);
+                }
+            };
 
-                ws.onclose = function() {
-                    console.log("Deriv WebSocket disconnected.");
-                };
+            ws.onclose = function() {
+                statusDisplay.textContent = "Disconnected - Retrying...";
+                statusDisplay.style.color = "#ff4444";
+                setTimeout(connectDerivWebSocket, 5000);
+            };
 
-                ws.onerror = function(err) {
-                    console.error("WebSocket Error: ", err);
-                };
+            ws.onerror = function(err) {
+                console.error("WebSocket Error: ", err);
+            };
+        }
 
-            </script>
+        // Fallback simulator specifically for when Forex markets are closed (Weekends)
+        let simInterval;
+        function startSimulationFallback() {
+            if (simInterval) clearInterval(simInterval);
+            simInterval = setInterval(() => {
+                const change = (Math.random() - 0.5) * 0.6; 
+                currentPrice += change;
+                const isUp = change >= 0;
+                handleNewTick(currentPrice, isUp);
+            }, 1000);
+        }
+
+        // Initialize connection
+        connectDerivWebSocket();
+
+    </script>
 </body>
 </html>
