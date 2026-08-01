@@ -383,31 +383,53 @@
 
         // --- 3. DATA FEED SOURCE ---
 
-        /* 
-           WEBSOCKET INTEGRATION POINT: 
-           To use a real WebSocket for XAU/USD, comment out the "Simulation Loop" below
-           and use this logic connecting to your broker's API:
+                // Deriv WebSocket Integration for XAU/USD
+                const appId = 1089; // Standard public app ID for Deriv WebSocket
+                const ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${appId}`);
 
-           const ws = new WebSocket('wss://your-broker-socket-url');
-           ws.onmessage = (event) => {
-               const data = JSON.parse(event.data);
-               const newPrice = parseFloat(data.price);
-               const isUp = newPrice >= currentPrice;
-               currentPrice = newPrice;
-               handleNewTick(currentPrice, isUp);
-           };
-        */
+                let isFirstTick = true;
 
-        // Simulation Loop (1 tick per second simulating XAU/USD volatility)
-        setInterval(() => {
-            // Generate a random price movement between -$0.30 and +$0.30
-            const change = (Math.random() - 0.5) * 0.6; 
-            currentPrice += change;
-            const isUp = change >= 0;
+                ws.onopen = function() {
+                    console.log("Connected to Deriv WebSocket");
+                    // Subscribe to XAU/USD ticks (Deriv symbol: frxXAUUSD)
+                    ws.send(JSON.stringify({
+                        ticks: "frxXAUUSD",
+                        subscribe: 1
+                    }));
+                };
+
+                ws.onmessage = function(msg) {
+                    const data = JSON.parse(msg.data);
             
-            handleNewTick(currentPrice, isUp);
-        }, 1000);
+                    if (data.error) {
+                        console.error("Deriv API Error: ", data.error.message);
+                        return;
+                    }
 
-    </script>
+                    if (data.tick) {
+                        const newPrice = parseFloat(data.tick.quote);
+                
+                        // Sync the initial price silently so we don't calculate a fake jump
+                        if (isFirstTick) {
+                            currentPrice = newPrice;
+                            isFirstTick = false;
+                            return; 
+                        }
+                
+                        const isUp = newPrice >= currentPrice;
+                        currentPrice = newPrice;
+                        handleNewTick(currentPrice, isUp);
+                    }
+                };
+
+                ws.onclose = function() {
+                    console.log("Deriv WebSocket disconnected.");
+                };
+
+                ws.onerror = function(err) {
+                    console.error("WebSocket Error: ", err);
+                };
+
+            </script>
 </body>
 </html>
