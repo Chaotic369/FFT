@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XAU/USD Tick Analysis System</title>
+    <style>
+        :root {
+            --bg-color: #000432;
+            --grid-line: rgba(255, 255, 255, 0.15);
+            --neon-green: #00ff55;
+            --neon-red: #ff0044;
+            --neon-pink: #ff00ff;
+            --neon-blue: #00ffff;
+            --table-border: #4a4a8a;
+            --text-grey: #8888aa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace; /* Monospace for trading data */
+            color: white;
+        }
+
+        /* --- LEFT PANEL: THE GRID --- */
+        .left-panel {
+            width: 60%;
+            height: 100%;
+            display: flex;
+            position: relative;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(24, 1fr);
+            grid-template-rows: repeat(117, 1fr); /* 117 rows to match 0-116 index */
+            flex: 1;
+            height: 100%;
+            background-color: var(--bg-color);
+        }
+
+        .grid-cell {
+            box-sizing: border-box;
+            border-right: 1px solid var(--grid-line);
+            border-bottom: 1px solid var(--grid-line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: min(0.9vw, 1vh);
+            font-weight: bold;
+            user-select: none;
+        }
+
+        /* --- CENTER PANEL: DIVIDER & ROW NUMBERS --- */
+        .center-panel {
+            width: 5%;
+            height: 100%;
+            display: flex;
+            border-left: 2px solid var(--table-border);
+            border-right: 2px solid var(--table-border);
+            background-color: #00021a;
+        }
+
+        .multiplier-col, .index-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--table-border);
+        }
+
+        .center-cell {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: min(0.8vw, 0.9vh);
+            border-bottom: 1px solid var(--grid-line);
+        }
+        
+        .multiplier-col .center-cell { color: var(--neon-pink); }
+        .index-col .center-cell { color: var(--text-grey); font-weight: bold; background: #000432; }
+
+        /* --- RIGHT PANEL: DASHBOARD --- */
+        .right-panel {
+            width: 35%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 5px;
+            gap: 10px;
+        }
+
+        /* Top Controls */
+        .top-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            padding: 5px;
+            border-bottom: 1px solid var(--table-border);
+        }
+
+        .control-btn {
+            background: transparent;
+            color: var(--text-grey);
+            border: 1px solid #aa8800; /* Yellowish border from screenshot */
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .control-btn:hover { background: #aa8800; color: #000; }
+        
+        .active-btn { background: #aa8800; color: #000; }
+
+        .price-display {
+            margin-left: auto;
+            color: yellow;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* Tables */
+        .dashboard-table-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        table.trading-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            border: 1px solid var(--table-border);
+        }
+
+        table.trading-table th, table.trading-table td {
+            border: 1px solid var(--table-border);
+            text-align: center;
+            padding: 4px 2px;
+        }
+
+        .table-title {
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 5px;
+            padding: 4px 0;
+            border: 1px solid var(--table-border);
+        }
+
+        .title-reversal { color: var(--neon-pink); }
+        .title-momentum { color: var(--neon-blue); }
+
+        .asset-name { color: #aaaaaa; }
+        .val-c { color: var(--neon-green); }
+        .val-r { color: var(--neon-red); }
+        .val-x { color: var(--neon-pink); }
+
+        /* Bottom Info */
+        .bottom-info {
+            display: flex;
+            justify-content: space-between;
+            border: 1px solid var(--neon-green);
+            padding: 5px;
+            font-size: 12px;
+            color: var(--neon-green);
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--table-border); }
+
+    </style>
+</head>
+<body>
+
+    <!-- LEFT PANEL: GRID -->
+    <div class="left-panel">
+        <div class="grid-container" id="matrix-grid"></div>
+    </div>
+
+    <!-- CENTER PANEL: ROW LABELS -->
+    <div class="center-panel">
+        <div class="multiplier-col" id="multiplier-col"></div>
+        <div class="index-col" id="index-col"></div>
+    </div>
+
+    <!-- RIGHT PANEL: ANALYSIS DASHBOARD -->
+    <div class="right-panel">
+        
+        <!-- Top Control Bar -->
+        <div class="top-controls">
+            <button class="control-btn active-btn">BS %</button>
+            <button class="control-btn">ALL LVL</button>
+            <button class="control-btn">SCAN</button>
+            <button class="control-btn">AV</button>
+            <div class="price-display">XAU/USD: <span id="current-price">0.00</span></div>
+        </div>
+
+        <div class="dashboard-table-container">
+            <!-- REVERSAL TABLE -->
+            <div class="table-title title-reversal">R E V E R S A L</div>
+            <table class="trading-table" id="reversal-table">
+                <thead>
+                    <tr style="color: var(--text-grey);">
+                        <th>ASSET</th>
+                        <th>C</th>
+                        <th>R</th>
+                        <th>X-RNG</th>
+                        <th>N1</th>
+                        <th>N2</th>
+                        <th>F-RNG</th>
+                        <th>WIN%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows injected by JS -->
+                </tbody>
+            </table>
+
+            <br>
+
+            <!-- MOMENTUM TABLE -->
+            <div class="table-title title-momentum">M O M E N T U M</div>
+            <table class="trading-table" id="momentum-table">
+                <thead>
+                    <tr style="color: var(--text-grey);">
+                        <th>ASSET</th>
+                        <th>C</th>
+                        <th>R</th>
+                        <th>X-RNG</th>
+                        <th>N1</th>
+                        <th>N2</th>
+                        <th>F-RNG</th>
+                        <th>WIN%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows injected by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bottom Status -->
+        <div class="bottom-info">
+            <span id="sys-time">00:00</span>
+            <span>MIN: 61</span>
+            <span>MAX: 120</span>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. INITIALIZE LAYOUT (GRID & CENTER COLUMNS) ---
+        const gridContainer = document.getElementById('matrix-grid');
+        const multiplierCol = document.getElementById('multiplier-col');
+        const indexCol = document.getElementById('index-col');
+        
+        const TOTAL_ROWS = 117;
+        const TOTAL_COLS = 24;
+        
+        // Render Center Columns
+        for (let i = 0; i < TOTAL_ROWS; i++) {
+            // Multiplier (mocking the x3, x11 logic from screenshot)
+            const mCell = document.createElement('div');
+            mCell.className = 'center-cell';
+            mCell.textContent = 'x' + (Math.floor(Math.random() * 10) + 3);
+            multiplierCol.appendChild(mCell);
+
+            // Row Index (0 to 116)
+            const idxCell = document.createElement('div');
+            idxCell.className = 'center-cell';
+            idxCell.textContent = i;
+            indexCol.appendChild(idxCell);
+        }
+
+        // Render Main Grid (Empty initially)
+        const gridCells = [];
+        for (let r = 0; r < TOTAL_ROWS; r++) {
+            gridCells[r] = [];
+            for (let c = 0; c < TOTAL_COLS; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                gridContainer.appendChild(cell);
+                gridCells[r].push(cell);
+            }
+        }
+
+
+        // --- 2. XAU/USD TICK ENGINE & LOGIC ---
+        let currentPrice = 2345.50;
+        let activeRow = 0;
+        let activeCol = 0;
+        
+        // Streak tracking
+        let currentStreak = 0;
+        let lastColor = null;
+
+        // UI Elements
+        const priceDisplay = document.getElementById('current-price');
+        const reversalTable = document.querySelector('#reversal-table tbody');
+        const momentumTable = document.querySelector('#momentum-table tbody');
+        const timeDisplay = document.getElementById('sys-time');
+
+        // Clock Update
+        setInterval(() => {
+            const now = new Date();
+            timeDisplay.textContent = now.toTimeString().split(' ')[0].substring(0, 5) + ' & ' + 
+                                      new Date(now.getTime() + 12*60*60*1000).toTimeString().split(' ')[0].substring(0, 5);
+        }, 1000);
+
+        function addSignalToTable(tableBody, type, streak, color) {
+            const tr = document.createElement('tr');
+            
+            // Random mock data to match screenshot vibe based on the signal
+            const cVal = Math.floor(Math.random() * 50) + 80;
+            const rVal = Math.floor(Math.random() * 50) + 30;
+            const winRate = Math.floor(Math.random() * 15) + 80;
+
+            tr.innerHTML = `
+                <td class="asset-name">XAU/USD</td>
+                <td class="val-c">C${cVal}</td>
+                <td class="val-r">R${rVal}</td>
+                <td class="val-x" style="color:${color}">X4-X${streak}</td>
+                <td>22</td>
+                <td>3</td>
+                <td>F1-3</td>
+                <td style="color:${color}">${winRate}%</td>
+            `;
+
+            // Prepend so newest is at the top
+            tableBody.insertBefore(tr, tableBody.firstChild);
+            
+            // Keep tables from getting infinitely long (max 20 rows)
+            if (tableBody.children.length > 20) {
+                tableBody.removeChild(tableBody.lastChild);
+            }
+        }
+
+        function handleNewTick(price, isUp) {
+            priceDisplay.textContent = price.toFixed(2);
+            priceDisplay.style.color = isUp ? '#00ff55' : '#ff0044';
+
+            const tickColor = isUp ? '#00ff55' : '#ff0044';
+
+            // Streak Logic
+            if (lastColor === tickColor) {
+                currentStreak++;
+            } else {
+                // If streak broke, check if it was long enough to trigger a signal (e.g., streak > 3)
+                if (currentStreak >= 4) {
+                    addSignalToTable(reversalTable, 'REVERSAL', currentStreak, tickColor === '#00ff55' ? '#ff0044' : '#00ff55');
+                } else if (currentStreak === 3) {
+                    addSignalToTable(momentumTable, 'MOMENTUM', currentStreak, tickColor);
+                }
+                currentStreak = 1;
+                lastColor = tickColor;
+            }
+
+            // Draw to grid
+            if (activeRow < TOTAL_ROWS && activeCol < TOTAL_COLS) {
+                const cell = gridCells[activeRow][activeCol];
+                cell.textContent = 'X' + currentStreak;
+                cell.style.color = tickColor;
+
+                // Move logic (fills horizontally, then wraps to next row)
+                activeCol++;
+                if (activeCol >= TOTAL_COLS) {
+                    activeCol = 0;
+                    activeRow++;
+                }
+            }
+        }
+
+        // --- 3. DATA FEED SOURCE ---
+
+        /* 
+           WEBSOCKET INTEGRATION POINT: 
+           To use a real WebSocket for XAU/USD, comment out the "Simulation Loop" below
+           and use this logic connecting to your broker's API:
+
+           const ws = new WebSocket('wss://your-broker-socket-url');
+           ws.onmessage = (event) => {
+               const data = JSON.parse(event.data);
+               const newPrice = parseFloat(data.price);
+               const isUp = newPrice >= currentPrice;
+               currentPrice = newPrice;
+               handleNewTick(currentPrice, isUp);
+           };
+        */
+
+        // Simulation Loop (1 tick per second simulating XAU/USD volatility)
+        setInterval(() => {
+            // Generate a random price movement between -$0.30 and +$0.30
+            const change = (Math.random() - 0.5) * 0.6; 
+            currentPrice += change;
+            const isUp = change >= 0;
+            
+            handleNewTick(currentPrice, isUp);
+        }, 1000);
+
+    </script>
+</body>
+</html>
